@@ -70,3 +70,20 @@ return response.user.contributionsCollection.contributionCalendar;
  throw new Error("Error fetching user contribution data: " + error);
           }
 }
+
+//Lets now fetch the github user repositories using the access token
+export const getRepositories = async (page: number , perPage: number=10) => {
+  const token = await getGithubToken();
+  const octokit = new Octokit({
+    auth: token,
+  });
+  const{data} = await octokit.rest.repos.listForAuthenticatedUser({
+    sort: "updated",
+    direction: "desc",
+    visibility: "all",
+    per_page: perPage,
+    page: page,
+  })
+
+  return data;
+}

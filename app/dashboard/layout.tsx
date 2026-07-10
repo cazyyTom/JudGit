@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -7,26 +7,25 @@ import {
 import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 
-const DashboardLayout = (
-    {children}: {children: React.ReactNode}
-) => {
+const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider>
-        <AppSidebar />
-      <SidebarInset>
-        <header className="flex items-center justify-between p-4">
-          <SidebarTrigger className="px-2 py-1 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"/>
-          <Separator orientation="vertical" className="mx-2 h-4" />
+      <AppSidebar />
+      <SidebarInset className="flex flex-col h-screen overflow-hidden">
+        {/* Top Header Navigation - Locked at the top */}
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="px-1 py-1 text-sm font-medium text-accent bg-foreground rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
           <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
-          <main className="flex-1 overflow-auto p-4 md:p-6">
-      {children}
-          </main>
         </header>
-      </SidebarInset>
- 
-    
-    </SidebarProvider>
-  )
-}
 
-export default DashboardLayout
+        {/* Main Content Area - Renders properly below the header */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-background">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+};
+
+export default DashboardLayout;
