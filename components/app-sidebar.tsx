@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Settings, Moon, Sun, LogOut } from "lucide-react";
+import { BookOpen, StarCheck, Settings, Moon, Sun, LogOut } from "lucide-react";
 
 import { useSession } from "@/lib/auth-client";
 import { GithubIcon } from "@/module/auth/components/login-ui";
@@ -50,12 +50,7 @@ export const AppSidebar = () => {
     {
       name: "Reviews",
       url: "/dashboard/reviews",
-      icon: <BookOpen className="w-4 h-4" />,
-    },
-    {
-      name: "Subscriptions",
-      url: "/dashboard/subscriptions",
-      icon: <BookOpen className="w-4 h-4" />,
+      icon: <StarCheck className="w-4 h-4" />,
     },
     {
       name: "Settings",
