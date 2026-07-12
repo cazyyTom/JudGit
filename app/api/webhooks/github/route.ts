@@ -7,10 +7,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const event = req.headers.get("x-github-event");
    if (event === "ping") {
-      return NextResponse.json({ message: "Webhook received successfully" }, {status: 200});
+      return NextResponse.json({ message: "Pong" }, {status: 200});
     }
+if (event === "pull_request") {
+  // TODO: handle pull_request payload (body.action, body.pull_request, body.repository)
+}
 
-    // TODO pull request later
 
     return NextResponse.json({ message: "Event processed successfully" }, {status: 200});
   } catch (error) {

@@ -94,7 +94,7 @@ export const createWebhook = async (repoName: string, owner: string) => {
     auth: token,
   });
 
-const webhookUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/api/github/webhook`;
+const webhookUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/api/webhooks/github`;
 
 const{data:hooks} = await octokit.rest.repos.listWebhooks({
   owner: owner,
@@ -115,4 +115,33 @@ const {data} = await octokit.rest.repos.createWebhook({
   events: [ "pull_request"],
 });
 return data;
+}
+
+export const deleteWebhook = async (repoName: string, owner: string) => {
+  const token = await getGithubToken();
+  const octokit = new Octokit({
+    auth: token,
+  });
+
+  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/api/webhooks/github`;
+
+  try{
+    const {data:hooks} = await octokit.rest.repos.listWebhooks({
+      owner: owner,
+      repo: repoName,
+    });
+    const webhookToDelete = hooks.find((hook) => hook.config.url === webhookUrl);
+    if (webhookToDelete) {
+      await octokit.rest.repos.deleteWebhook({
+        owner: owner,
+        repo: repoName,
+        hook_id: webhookToDelete.id,
+      });
+      return { message: "Webhook deleted successfully" };
+    }
+    return { message: "No webhook found to delete" };
+  }
+  catch (error) {
+    throw new Error("Error deleting webhook: " + error);
+  }
 }

@@ -21,7 +21,14 @@ export const fetchRepositories = async (page: number=1, perPage: number = 10) =>
       dbRepos.map((repo: any) => repo.githubId)
     );
     return githubRepos.map((repo: any) => ({
-      ...repo,
+      id: repo.id,
+      name: repo.name,
+      fullName: repo.full_name,
+      description: repo.description,
+      html_url: repo.html_url,
+      stargazers_count: repo.stargazers_count,
+      language: repo.language,
+      topics: repo.topics,
       isConnected: coonnectedRepoIds.has(BigInt(repo.id)),
     }));
 }
@@ -34,7 +41,7 @@ export  const connectRepository = async (owner:string, repo:string , githubId: b
     }
     //TODO: Check if user can connect more than 5 repositories
 
-    const webHook = await createWebhook(owner, repo);
+    const webHook = await createWebhook(repo, owner);
     if(webHook){
         await prisma.repository.create({
             data: {
