@@ -2,6 +2,7 @@
 import React from "react";
 import { useRepositories } from "@/module/repository/hooks/use-repositories";
 import { getRepositories } from "@/module/github/lib/github";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { RepositoryListSkeleton, RepositoryCardSkeleton } from "@/module/reposit
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef } from "react";
 import { any } from "better-auth";
+import { useConnectRepository } from "@/module/repository/hooks/use-connect-repository";
 
 interface Repository {
   id: number;
@@ -26,10 +28,27 @@ interface Repository {
 const RepositoryPage = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useRepositories();
+    const {mutate: connectRepo} =useConnectRepository();
 
     const [localConnectingId, setLocalConnectingId] = useState<number | null>(null);
+
     const handleConnect = async (repo: Repository) => {
+      setLocalConnectingId(repo.id);
+      connectRepo({ 
+        owner: repo.fullName.split("/")[0],
+        repo: repo.name,
+        githubId: BigInt(repo.id)
+      }, {
+        onSuccess: () => {
+          setLocalConnectingId(null);
+        },
+        onError: () => {
+          setLocalConnectingId(null);
+        }
+      });
     }
+
+
   const [searchQuery, setSearchQuery] = useState("");
     const observerTarget = useRef<HTMLDivElement | null>(null);
 
@@ -78,6 +97,9 @@ const RepositoryPage = () => {
       repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       repo.fullName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  
+
   return (
     <div className="y-4">
       <h1 className="text-3xl font-bold tracking-tight text-foreground">
