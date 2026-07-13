@@ -2,6 +2,7 @@ import { Octokit } from "octokit";
 import { auth } from "../../../lib/auth";
 import { prisma } from "../../../lib/db";
 import { headers } from "next/headers";
+import { ItemSeparator } from "@/components/ui/item";
 export { headers } from "next/headers";
 
 //For getting github access token from the request headers
@@ -10,7 +11,7 @@ export const getGithubToken = async () => {
   if (!session) {
     throw new Error("Unauthorized");
   }
-  const account = await prisma.account.findFirst({
+  const account: any = await prisma.account.findFirst({
     where: {
       userId: session.user.id,
       providerId: "github",
@@ -145,3 +146,57 @@ export const deleteWebhook = async (repoName: string, owner: string) => {
     throw new Error("Error deleting webhook: " + error);
   }
 }
+
+
+export async function getRepofileContent(owner: string, repo: string, token: string, path: string = ""): Promise<{ path: string; content: string }[]> {
+  const octokit = new Octokit({
+    auth: token,
+  });
+  const { data } = await octokit.rest.repos.getContent({
+    owner: owner,
+    repo: repo,
+    path: path,
+  });
+
+  if(!Array.isArray(data)) {
+    //it is file
+    if(data.type === "file") {
+      return [{
+        path: data.path,
+        content: Buffer.from(data.content, "base64").toString("utf-8"),
+      }];
+    }
+    return []
+    }
+ let files: { path: string; content: string }[] = [];
+ for (const item of data) {
+    if (item.type === "file") {
+      const {data: fileData} = await octokit.rest.repos.getContent({
+        owner: owner,
+        repo: repo,
+        path: item.path,
+      });
+
+if(!Array.isArray(fileData) && fileData.type === "file" && fileData.content) {
+
+  //Filter out non-code files iff needed (images, binaries, etc.) based on file extension or mime type. For example, we can filter out common binary file extensions.
+
+  if(!item.path.match(/\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz)$/i)) {
+  files.push({
+    path: item.path,
+    content: Buffer.from(fileData.content, "base64").toString("utf-8"),
+  });
+}
+
+}
+
+  }
+  else if (item.type === "dir") {
+  const subFiles = await getRepofileContent(owner, repo, token, item.path);
+  files = files.concat(subFiles);
+  }
+    
+    }
+  return files;
+}
+

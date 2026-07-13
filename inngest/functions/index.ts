@@ -1,15 +1,40 @@
 // src/inngest/functions.ts
 import { inngest } from "../client";
+import { getRepofileContent } from "../../module/github/lib/github";
+import { prisma } from "../../lib/db";
+import { indexCodebase, retrieveContext } from "../../module/ai/lib/rag";
+  
 
-export const processTask = inngest.createFunction(
-  { id: "process-task", triggers: { event: "app/task.created" } },
+export const indexRepo = inngest.createFunction(
+  {
+    id: "index-repo",
+    // Move your event trigger here
+    triggers: [{ event: "repository.connected" }],
+  },
   async ({ event, step }) => {
-    const result = await step.run("handle-task", async () => {
-      return { processed: true, id: event.data.id };
+    const { owner, repo, userId } = event.data;
+
+    // Fetch the files from the repo and index them in the database for RAG
+    const files = await step.run("fetch-files", async () => {
+      const account = await prisma.account.findFirst({
+        where: {
+          userId: userId,
+          providerId: "github",
+        },
+      });
+
+      if (!account) {
+        throw new Error("No GitHub account found for user");
+      }
+      return await getRepofileContent(owner, repo, account.accessToken!);
     });
 
-    await step.sleep("pause", "1s");
+    await step.run("index-codebase", async () => {
+      await indexCodebase(`${owner}/${repo}`, files);
+    });
 
-    return { message: `Task ${event.data.id} complete`, result };
+    return { success: true, indexedFiles: files.length };
   },
 );
+
+
