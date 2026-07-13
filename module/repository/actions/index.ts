@@ -18,11 +18,12 @@ export const fetchRepositories = async (page: number=1, perPage: number = 10) =>
             userId: session.user.id,
         },
     });
-    const coonnectedRepoIds = new Set(
-      dbRepos.map((repo: any) => repo.githubId)
+    const connectedRepoMap = new Map(
+      dbRepos.map((repo: any) => [repo.githubId.toString(), repo.id])
     );
     return githubRepos.map((repo: any) => ({
       id: repo.id,
+      dbId: connectedRepoMap.get(repo.id.toString()) ?? null,
       name: repo.name,
       fullName: repo.full_name,
       description: repo.description,
@@ -30,7 +31,7 @@ export const fetchRepositories = async (page: number=1, perPage: number = 10) =>
       stargazers_count: repo.stargazers_count,
       language: repo.language,
       topics: repo.topics,
-      isConnected: coonnectedRepoIds.has(BigInt(repo.id)),
+      isConnected: connectedRepoMap.has(repo.id.toString()),
     }));
 }
 
@@ -41,6 +42,16 @@ export  const connectRepository = async (owner:string, repo:string , githubId: b
         throw new Error("Unauthorized");
     }
     //TODO: Check if user can connect more than 5 repositories
+
+    const existing = await prisma.repository.findUnique({
+        where: { githubId: BigInt(githubId) },
+    });
+    if (existing) {
+        if (existing.userId !== session.user.id) {
+            throw new Error("This repository is already connected by another user");
+        }
+        return { alreadyConnected: true };
+    }
 
     const webHook = await createWebhook(repo, owner);
     if(webHook){

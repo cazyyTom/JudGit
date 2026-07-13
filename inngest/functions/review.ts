@@ -78,7 +78,7 @@ Format your response in markdown.`;
     });
 
     await step.run("post-comment", async () => {
-      await postReviewComment(token, owner, repo, prNumber, review);
+      await postReviewComment(owner, repo, prNumber, review, token);
     });
 
     await step.run("save-review", async () => {

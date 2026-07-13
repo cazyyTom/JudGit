@@ -12,9 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef } from "react";
 import { any } from "better-auth";
 import { useConnectRepository } from "@/module/repository/hooks/use-connect-repository";
+import { useDisconnectRepository } from "@/module/repository/hooks/use-disconnect-repository";
 
 interface Repository {
   id: number;
+  dbId: string | null;
   fullName: string;
   name: string;
   description?: string | null;
@@ -29,11 +31,25 @@ const RepositoryPage = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useRepositories();
     const {mutate: connectRepo} =useConnectRepository();
+    const {mutate: disconnectRepo} = useDisconnectRepository();
 
     const [localConnectingId, setLocalConnectingId] = useState<number | null>(null);
 
-    const handleConnect = async (repo: Repository) => {
+    const handleToggleConnect = async (repo: Repository) => {
       setLocalConnectingId(repo.id);
+
+      if (repo.isConnected) {
+        if (!repo.dbId) {
+          setLocalConnectingId(null);
+          return;
+        }
+        disconnectRepo(repo.dbId, {
+          onSuccess: () => setLocalConnectingId(null),
+          onError: () => setLocalConnectingId(null),
+        });
+        return;
+      }
+
       connectRepo({ 
         owner: repo.fullName.split("/")[0],
         repo: repo.name,
@@ -161,12 +177,12 @@ const RepositoryPage = () => {
                   </Button>
                   <Button
                     onClick={() => {
-                      handleConnect(repo);
+                      handleToggleConnect(repo);
                     }}
                     variant={repo.isConnected ? "outline" : "default"}
                   >
                     {localConnectingId === repo.id
-                      ? "Connecting..."
+                      ? (repo.isConnected ? "Disconnecting..." : "Connecting...")
                       : repo.isConnected
                         ? "Disconnect"
                         : "Connect"}

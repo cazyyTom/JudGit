@@ -59,7 +59,7 @@ export async function getDashboardStats() {
         const { data: user } = await octokit.rest.users.getAuthenticated();
         
         //Fetch Total connected Repo to the user
-        const totalRepos = 30; // Replace with actual logic to fetch connected repos
+        const totalRepos = (user.public_repos ?? 0) + (user.total_private_repos ?? 0);;
 
         // Fetch users contribution stats i.e commits, pull requests, issues, and code reviews
         const calendar = await fetchUserContribution(token, user.login);
@@ -73,7 +73,9 @@ export async function getDashboardStats() {
         const totalPRs = prs.total_count;   
 
         //Count AI Reviews from db/github
-        const totalReviews = 0; // Replace with actual logic to fetch AI reviews
+        const totalReviews = await prisma.review.count({
+            where: { userId: session.user.id },
+        });
 
         return{
             totalCommits,
@@ -158,25 +160,14 @@ export async function getMonthlyStatus(){
    // Fetch reviews from database for last 6 months
    const sixMonthsAgo = new Date();
    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-   // TODO: REVIEWS'S REAL DATA
-   const generateSampleReviews = () => {
-     const sampleReviews = [];
-     const now = new Date();
-     // Generate random reviews over the past 6 months
-     for (let i = 0; i < 45; i++) {
-       const randomDaysAgo = Math.floor(Math.random() * 180); // Random day in last 6 months
-       const reviewDate = new Date(now);
-       reviewDate.setDate(reviewDate.getDate() - randomDaysAgo);
 
-       sampleReviews.push({
-         createdAt: reviewDate,
-       });
-     }
-
-     return sampleReviews;
-   };
-
-   const reviews = generateSampleReviews();
+   const reviews = await prisma.review.findMany({
+     where: {
+       userId: session.user.id,
+       createdAt: { gte: sixMonthsAgo },
+     },
+     select: { createdAt: true },
+   });
 
    reviews.forEach((review) => {
      const monthKey = monthNames[review.createdAt.getMonth()];
