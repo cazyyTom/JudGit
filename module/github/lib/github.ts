@@ -200,3 +200,36 @@ if(!Array.isArray(fileData) && fileData.type === "file" && fileData.content) {
   return files;
 }
 
+export async function getPullRequestDiff(owner: string, repo: string, prNumber: number, token: string) {
+const octokit = new Octokit({
+  auth: token,
+});
+const { data: pr } = await octokit.rest.pulls.get({
+  owner: owner,
+  repo: repo,
+  pull_number: prNumber,
+});
+const { data: diff } = await octokit.rest.pulls.get({
+  owner: owner,
+  repo: repo,
+  pull_number: prNumber,
+  mediaType: {
+    format: "diff",
+  },
+});
+return { title: pr.title, diff: diff, description: pr.body || "" }; 
+}
+
+
+export async function postReviewComment(owner: string, repo: string, prNumber: number, review: string, token: string) {
+const octokit = new Octokit({
+  auth: token,
+});
+await octokit.rest.issues.createComment({
+  owner: owner,
+  repo: repo,
+  issue_number: prNumber,
+  body: `### 🤖AI Code Review\n\n${review}\n\n---\n*Powered by JudGit*`
+});
+}
+

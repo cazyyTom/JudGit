@@ -1,7 +1,7 @@
 // Post request
 
 import { NextRequest, NextResponse } from "next/server";
-
+import { reviewPullRequest } from "@/module/ai/actions";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -10,7 +10,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Pong" }, {status: 200});
     }
 if (event === "pull_request") {
-  // TODO: handle pull_request payload (body.action, body.pull_request, body.repository)
+ const action = body.action;
+ const repo = body.repository.full_name;
+ const prNumber = body.number;
+
+ const [owner, repoName] = repo.split("/");
+
+ if (action === "opened" || action === "synchronize") {
+  reviewPullRequest(owner, repoName, prNumber)
+  .then(() => {
+    console.log(`Review completed for ${repo} PR #${prNumber}`);
+  })
+  .catch((error: any) => {
+    console.error(`Error reviewing pull request for ${repo} PR #${prNumber}:`, error);
+  });
+ }
+
 }
 
 
