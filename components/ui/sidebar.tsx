@@ -512,7 +512,7 @@ function SidebarMenuButton({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipTrigger >{button}</TooltipTrigger>
       <TooltipContent
         side="right"
         align="center"
